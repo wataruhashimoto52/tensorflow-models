@@ -9,3 +9,7 @@ Tensorflow & Keras models
 
 * `keras_sentiment_analysis_using_CNN.ipynb`
 
+* `imdb_keras_to_tf.ipynb`
+
+* `dnn.ipynb`
+
