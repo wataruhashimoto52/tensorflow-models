@@ -2,6 +2,9 @@
 bayesflow.ipynb
 /nmt
 /MNIST_data
-/cifar10
 /notebooks
 /.ipynb_checkpoints
+/datasets
+/eager_examples/__pycache__
+/eager_examples/dataset.py
+tfdbg_sample.py
