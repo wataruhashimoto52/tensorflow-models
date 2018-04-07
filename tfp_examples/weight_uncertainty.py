@@ -36,7 +36,7 @@ def make_posterior_mvndiag(true_getter, base_var, name=None):
 
     with tf.name_scope(name, "make_posterior_mvndiag", [base_var]):
 
-        sigma_init = np.log(np.exp1m(0.01))
+        sigma_init = np.log(np.expm1(0.01))
         scale_diag = tf.nn.softplus(
             true_getter(
                 name="{}/make_posterior_mvndiag/softplus_inverse_sigma".format(name),
