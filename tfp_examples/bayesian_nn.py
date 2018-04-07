@@ -81,12 +81,39 @@ if __name__ == "__main__":
         help="Number of datapoints to generate."
     )
     parser.add_argument(
+        "--viz_steps",
+        type=int,
+        default=400,
+        help="Frequency at which save visualizations."
+    )
+    parser.add_argument(
+        "--encoder_layers",
+        type=str,
+        default="128,32",
+        help="comma-separated list of layer sizes for the encoder."
+    )
+    parser.add_argument(
+        "--activation",
+        type=str,
+        default="relu",
+        help="Activation function for the encoder and decoder networks."
+    )
+    parser.add_argument(
         "--n_monte_carlo",
         type=int,
         default=25,
         help="Monte Carlo samples used to visualize the weight posterior"
     )
 
+    parser.add_argument(
+        "--fake_data",
+        default=False,
+        action="store_true",
+        help="If true, uses fake data for unit testing."
+    )
+
     FLAGS, unparsed = parser.parse_known_args()
+    FLAGS.encoder_layers = [int(units) for units in FLAGS.encoder_layers.split(",")]
+    FLAGS.activation = tf.nn.__getattribute__(FLAGS.activation)
 
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
