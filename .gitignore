@@ -8,3 +8,4 @@ bayesflow.ipynb
 /eager_examples/__pycache__
 /eager_examples/dataset.py
 tfdbg_sample.py
+/tfp_examples/__pycache__
