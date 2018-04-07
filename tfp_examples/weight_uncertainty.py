@@ -5,7 +5,7 @@ import functools
 import tensorflow as tf 
 import tensorflow_probability as tfp 
 
-tfd = tf.contrib.distribution 
+tfd = tf.contrib.distributions
 tfe = tf.contrib.eager 
 
 VI_KL_LOSSES = "vi_kl_losses"
