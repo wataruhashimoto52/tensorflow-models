@@ -20,10 +20,38 @@ from tensorflow.contrib.learn.python.learn.datasets import mnist
 IMAGE_SHAPE = (28, 28)
 
 def build_input_pipeline(mnist_data, batch_size, heldout_size):
+    training_dataset = tf.data.Dataset.from_tensor_slices(
+        (mnist_data.train.images, np.int32(mnist_data.train.labels)))
+    training_batches = training_dataset.repeat().batch(batch_size)
+    training_iterator = training_batches.make_one_shot_iterator()
+
+    # build iterator over the heldout set with batch_size=heldout_size,
+    # i.e., return the entire heldout set as a constant
+    heldout_dataset = tf.data.Dataset.from_tensor_slices(
+        (mnist_data.validation.images,
+        np.int32(mnist_data.validation.labels)))
+    heldout_frozen = (heldout_dataset.take(heldout_size).
+                      repeat().batch(heldout_size))
+    heldout_iterator = heldout_frozen.make_one_shot_iterator()
+
+    handle = tf.placeholder(tf.string, shape=[])
+    feedable_iterator = tf.data.Iterator.from_string_handle(
+        handle, training_batches.output_types, training_batches.output_shapes)
+    images, labels = feedable_iterator.get_next()
+
+    return images, labels, handle, training_iterator, heldout_iterator
+
+def build_fake_data():
     pass
     
 
 def run_training():
+    
+    if FLAGS.fake_data:
+        mnist_data = build_fake_data()
+    else:
+        mnist_data = mnist.read_data_sets(FLAGS.input_data_dir)
+
     
 
     def build_bayesian_nn_model(inputs):
@@ -35,6 +63,12 @@ def run_training():
             model = tfd.Categorical(logits=logits)
 
             return model
+
+    with tf.Graph().as_default():
+        (images, labels, handle,
+        training_iterator, heldout_iterator) = build_input_pipeline(
+            mnist_data.FLAGS.batch_size, mnist_data.validation.num_examples)
+
     
 
 def main(_):
@@ -64,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=32,
+        default=128,
         help="Batch size.  Must divide evenly into the dataset sizes."
     )
     parser.add_argument(
@@ -104,12 +138,18 @@ if __name__ == "__main__":
         default=25,
         help="Monte Carlo samples used to visualize the weight posterior"
     )
-
     parser.add_argument(
         "--fake_data",
         default=False,
         action="store_true",
         help="If true, uses fake data for unit testing."
+    )
+    parser.add_argument(
+        "--input_data_dir",
+        type=str,
+        default=os.path.join(os.getenv("TEST_TMPDIR", "temp"),
+                                "bayesian_nn/input_data"),
+        help="Directory to put the input data."
     )
 
     FLAGS, unparsed = parser.parse_known_args()
