@@ -68,6 +68,23 @@ def run_training():
         (images, labels, handle,
         training_iterator, heldout_iterator) = build_input_pipeline(
             mnist_data.FLAGS.batch_size, mnist_data.validation.num_examples)
+        
+        # build a bayesian neural network. 
+        elbo_loss, model = bayesianify(build_bayesian_nn_model,images,
+                labels, mnist_data.validation.num_examples)
+        
+        # extract weight posterior statistics for later visualization
+        qs = tf.get_collection(VI_QDISTS)
+        names, qmeans, qstds = zip(*[
+            (q.name[6:-10], q.mean(), q.stddev()) for q in qs])
+        
+        with tf.name_scope("train"):
+            opt = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
+
+            train_op = opt.minimize(elbo_loss)
+            init = tf.global_variables_initializer()
+            sess = tf.Session()
+            sess.run(init)
 
     
 
