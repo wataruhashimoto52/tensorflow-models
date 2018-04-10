@@ -4,16 +4,17 @@ import numpy as np
 import keras
 import tensorflow as tf
 import dataset
-import tensorflow.contrib.eager as tfe 
 from keras.datasets import mnist 
+
+layers = tf.keras.layers
 
 num_classes = 10
 class MNISTModel(tf.keras.Model):
     def __init__(self):
         super(MNISTModel, self).__init__()
-        self.dense1 = tf.keras.layers.Dense(units=512, input_shape=(784,))
-        self.dense2 = tf.keras.layers.Dense(units=512)
-        self.dense3 = tf.keras.layers.Dense(units=num_classes)
+        self.dense1 = layers.Dense(units=512, input_shape=(784,))
+        self.dense2 = layers.Dense(units=512)
+        self.dense3 = layers.Dense(units=num_classes)
 
     def call(self, inputs):
         """
