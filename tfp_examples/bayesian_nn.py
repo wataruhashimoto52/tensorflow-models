@@ -1,4 +1,4 @@
-
+# coding: utf-8
 
 import numpy as np 
 import tensorflow as tf 
@@ -11,7 +11,7 @@ tfd = tf.contrib.distributions
 import matplotlib 
 matplotlib.use("Agg")
 from matplotlib import figure 
-from matplotlib.backend import backend_agg 
+from matplotlib.backends import backend_agg 
 import seaborn as sns 
 
 # data
@@ -43,6 +43,85 @@ def build_input_pipeline(mnist_data, batch_size, heldout_size):
 
 def build_fake_data():
     pass
+
+def plot_heldout_prediction(input_vals, probs,
+                            fname, n=10, title=""):
+    """
+    Save a PNG plot visualizing posterior uncertainty on heldout data.
+    Args:
+        input_vals: A `float`-like Numpy `array` of shape
+        `(n_heldout,) + IMAGE_SHAPE`, containing heldout input images.
+        probs: A `float`-like Numpy array of shape `(n_monte_carlo,
+        n_heldout, n_classes)` containing Monte Carlo samples of
+        class probabilities for each heldout sample.
+        fname: Python `str` filename to save the plot to.
+        n: Python `int` number of datapoints to vizualize.
+        title: Python `str` title for the plot.
+    Raises:
+        ImportError: if matplotlib is not available.
+    """
+
+    fig = figure.Figure(figsize=(9, 3*n))
+    canvas = backend_agg.FigureCanvasAgg(fig)
+    for i in range(n):
+        ax = fig.add_subplot(n, 3, 3*i + 1)
+        ax.imshow(input_vals[i, :].reshape(IMAGE_SHAPE), interpolation="None")
+
+        ax = fig.add_subplot(n, 3, 3*i + 2)
+        for prob_sample in probs:
+            sns.barplot(np.arange(10), prob_sample[i, :], alpha=0.1, ax=ax)
+            ax.set_ylim([0, 1])
+        ax.set_title("posterior samples")
+
+        ax = fig.add_subplot(n, 3, 3*i + 3)
+        sns.barplot(np.arange(10), np.mean(probs[:, i, :], axis=0), ax=ax)
+        ax.set_ylim([0, 1])
+        ax.set_title("predictive probs")
+    fig.suptitle(title)
+    fig.tight_layout()
+
+    canvas.print_figure(fname, format="png")
+    print("saved {}".format(fname))
+
+
+def plot_weight_posteriors(names, qm_vals, qs_vals, fname):
+    """
+    Save a PNG plot with histograms of weight means and stddevs.
+    Args:
+        names: A Python `iterable` of `str` variable names.
+        qm_vals: A Python `iterable`, the same length as `names`,
+        whose elements are Numpy `array`s, of any shape, containing
+        posterior means of weight varibles.
+        qs_vals: A Python `iterable`, the same length as `names`,
+        whose elements are Numpy `array`s, of any shape, containing
+        posterior standard deviations of weight varibles.
+        fname: Python `str` filename to save the plot to.
+    Raises:
+        ImportError: if matplotlib is not available.
+    """
+
+    fig = figure.Figure(figsize=(6, 3))
+    canvas = backend_agg.FigureCanvasAgg(fig)
+
+    ax = fig.add_subplot(1, 2, 1)
+    for n, qm in zip(names, qm_vals):
+        sns.distplot(qm.flatten(), ax=ax, label=n)
+    ax.set_title("weight means")
+    ax.set_xlim([-1.5, 1.5])
+    ax.set_ylim([0, 4.])
+    ax.legend()
+
+    ax = fig.add_subplot(1, 2, 2)
+    for n, qs in zip(names, qs_vals):
+        sns.distplot(qs.flatten(), ax=ax)
+    ax.set_title("weight stddevs")
+    ax.set_xlim([0, 1.])
+    ax.set_ylim([0, 25.])
+
+    fig.tight_layout()
+    canvas.print_figure(fname, format="png")
+    print("saved {}".format(fname))
+
     
 
 def run_training():
@@ -54,7 +133,7 @@ def run_training():
 
     
 
-    def build_bayesian_nn_model(inputs):
+    def build_bayesian_nn_model(inputs, name=None):
         with tf.name_scope(name, "build_bayesian_nn", [inputs]):
             net = inputs 
             for layer_size in FLAGS.encoder_layers:
@@ -67,7 +146,7 @@ def run_training():
     with tf.Graph().as_default():
         (images, labels, handle,
         training_iterator, heldout_iterator) = build_input_pipeline(
-            mnist_data.FLAGS.batch_size, mnist_data.validation.num_examples)
+            mnist_data, FLAGS.batch_size, mnist_data.validation.num_examples)
         
         # build a bayesian neural network. 
         elbo_loss, model = bayesianify(build_bayesian_nn_model,images,
@@ -85,6 +164,44 @@ def run_training():
             init = tf.global_variables_initializer()
             sess = tf.Session()
             sess.run(init)
+
+            # run the training loop
+            train_handle = sess.run(training_iterator.string_handle())
+            heldout_handle = sess.run(heldout_iterator.string_handle())
+            for step in range(FLAGS.max_steps):
+                _, loss_value = sess.run([train_op, elbo_loss],
+                                    feed_dict={handle:train_handle})
+
+                if step % 10 == 0:
+                    print("step {:d} loss {:.2f}".format(step, loss_value))
+                
+                if (step + 1) % FLAGS.viz_steps == 0:
+                    probs = np.asarray([sess.run((model.probs),
+                    feed_dict={handle:heldout_handle}) for _ in range(FLAGS.n_monte_carlo)])
+
+                    mean_probs = np.mean(probs, axis=0)
+                    image_vals, label_vals = sess.run((images, labels),
+                                            feed_dict={handle:heldout_handle})
+                    heldout_lp = np.mean(np.log(mean_probs[np.arange(mean_probs.shape[0]),
+                                                    label_vals.flatten()]))
+
+                    print("...heldout lp {:2f}".format(heldout_lp))
+
+                    qm_vals, qs_vals = sess.run((qmeans, qstds))
+
+                    plot_weight_posteriors(names, qm_vals, qs_vals,
+                                 fname=os.path.join(
+                                     FLAGS.log_dir,
+                                     "step{:05d}_weights.png".format(step)))
+
+                    plot_heldout_prediction(image_vals, probs,
+                                            fname=os.path.join(
+                                            FLAGS.log_dir,
+                                            "step{:05d}_pred.png".format(step)),
+                                            title="mean heldout logprob {:.2f}"
+                                            .format(heldout_lp))
+
+
 
     
 
