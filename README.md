@@ -5,6 +5,8 @@ Tensorflow & Keras models
 
 ## contents
 
+* `cifar10` - Cifar10
+
 * `eager_examples` - using `tf.enable_eager_execution()`
 
 * `tfp_examples` - Bayesian Infernece using `tensorflow_probability`
