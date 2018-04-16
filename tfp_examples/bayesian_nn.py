@@ -46,20 +46,6 @@ def build_fake_data():
 
 def plot_heldout_prediction(input_vals, probs,
                             fname, n=10, title=""):
-    """
-    Save a PNG plot visualizing posterior uncertainty on heldout data.
-    Args:
-        input_vals: A `float`-like Numpy `array` of shape
-        `(n_heldout,) + IMAGE_SHAPE`, containing heldout input images.
-        probs: A `float`-like Numpy array of shape `(n_monte_carlo,
-        n_heldout, n_classes)` containing Monte Carlo samples of
-        class probabilities for each heldout sample.
-        fname: Python `str` filename to save the plot to.
-        n: Python `int` number of datapoints to vizualize.
-        title: Python `str` title for the plot.
-    Raises:
-        ImportError: if matplotlib is not available.
-    """
 
     fig = figure.Figure(figsize=(9, 3*n))
     canvas = backend_agg.FigureCanvasAgg(fig)
@@ -85,20 +71,6 @@ def plot_heldout_prediction(input_vals, probs,
 
 
 def plot_weight_posteriors(names, qm_vals, qs_vals, fname):
-    """
-    Save a PNG plot with histograms of weight means and stddevs.
-    Args:
-        names: A Python `iterable` of `str` variable names.
-        qm_vals: A Python `iterable`, the same length as `names`,
-        whose elements are Numpy `array`s, of any shape, containing
-        posterior means of weight varibles.
-        qs_vals: A Python `iterable`, the same length as `names`,
-        whose elements are Numpy `array`s, of any shape, containing
-        posterior standard deviations of weight varibles.
-        fname: Python `str` filename to save the plot to.
-    Raises:
-        ImportError: if matplotlib is not available.
-    """
 
     fig = figure.Figure(figsize=(6, 3))
     canvas = backend_agg.FigureCanvasAgg(fig)
@@ -154,6 +126,7 @@ def run_training():
         
         # extract weight posterior statistics for later visualization
         qs = tf.get_collection(VI_QDISTS)
+        
         names, qmeans, qstds = zip(*[
             (q.name[6:-10], q.mean(), q.stddev()) for q in qs])
         
