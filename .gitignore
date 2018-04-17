@@ -9,6 +9,7 @@ bayesflow.ipynb
 /eager_examples/dataset.py
 tfdbg_sample.py
 /tfp_examples/__pycache__
+/tfp_examples/.ipynb_checkpoints
 /.vscode
 /temp 
 /wavenet
