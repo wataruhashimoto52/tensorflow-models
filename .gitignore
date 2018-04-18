@@ -10,6 +10,7 @@ bayesflow.ipynb
 tfdbg_sample.py
 /tfp_examples/__pycache__
 /tfp_examples/.ipynb_checkpoints
+/tfp_examples/logistic_regression_vi.py
 /.vscode
 /temp 
 /wavenet
