@@ -106,7 +106,7 @@ def main(argv):
                 kernel_posterior_fn=tfp.layers.default_mean_field_normal_fn(),
                 bias_posterior_fn=tfp.layers.default_mean_field_normal_fn()
             )
-            logits = layer(input)
+            logits = layer(inputs)
             labels_dist = tfd.Bernoulli(logits=logits)
 
             # compute the -elbo as the loss, averaged over the batch size 
